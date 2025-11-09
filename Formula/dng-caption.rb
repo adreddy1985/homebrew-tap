@@ -40,22 +40,17 @@ class DngCaption < Formula
       (libexec/"dng_caption").install Dir["dng_caption/*.py"]
     end
     
-    # Create the main wrapper script
+    # Create the main wrapper script - UPDATED FOR YOUR FILE NAMES
     (bin/"caption").write <<~EOS
       #!/bin/bash
       export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
+      export PYTHONPATH="#{libexec}:$PYTHONPATH"
       
-      # Look for the main Python script
-      if [[ -f "#{libexec}/batch_with_model.py" ]]; then
-        exec "#{libexec}/bin/python" "#{libexec}/batch_with_model.py" "$@"
-      elif [[ -f "#{libexec}/batch_caption_and_embed.py" ]]; then
-        exec "#{libexec}/bin/python" "#{libexec}/batch_caption_and_embed.py" "$@"
-      elif [[ -f "#{libexec}/main.py" ]]; then
-        exec "#{libexec}/bin/python" "#{libexec}/main.py" "$@"
-      elif [[ -f "#{libexec}/dng_caption/cli.py" ]]; then
-        cd "#{libexec}" && exec "#{libexec}/bin/python" -m dng_caption.cli "$@"
+      # Your main batch processing script
+      if [[ -f "#{libexec}/batch.py" ]]; then
+        exec "#{libexec}/bin/python" "#{libexec}/batch.py" "$@"
       else
-        echo "Error: No main script found. Available files:"
+        echo "Error: batch.py not found at #{libexec}/"
         ls -la "#{libexec}/"
         exit 1
       fi
@@ -64,11 +59,23 @@ class DngCaption < Formula
     (bin/"caption-batch").write <<~EOS
       #!/bin/bash
       export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
+      export PYTHONPATH="#{libexec}:$PYTHONPATH"
       
-      if [[ -f "#{libexec}/batch_caption_and_embed.py" ]]; then
-        exec "#{libexec}/bin/python" "#{libexec}/batch_caption_and_embed.py" "$@"
+      # Same as caption for batch processing
+      exec "#{libexec}/bin/python" "#{libexec}/batch.py" "$@"
+    EOS
+    
+    (bin/"caption-embed").write <<~EOS
+      #!/bin/bash
+      export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
+      export PYTHONPATH="#{libexec}:$PYTHONPATH"
+      
+      # Embed XMP into JPEGs
+      if [[ -f "#{libexec}/embed.py" ]]; then
+        exec "#{libexec}/bin/python" "#{libexec}/embed.py" "$@"
       else
-        exec "#{bin}/caption" "$@"
+        echo "Error: embed.py not found"
+        exit 1
       fi
     EOS
     
@@ -84,7 +91,31 @@ class DngCaption < Formula
       "#{libexec}/bin/pip" list | grep -E "anthropic|pillow|piexif|geopy|exifread" || echo "No packages found"
       echo ""
       echo "Python files found:"
-      find "#{libexec}" -name "*.py" -type f | head -10
+      ls -la "#{libexec}/"*.py 2>/dev/null || echo "No .py files in root"
+      echo ""
+      echo "Testing Python imports:"
+      "#{libexec}/bin/python" -c "
+try:
+    import anthropic
+    print('✅ anthropic')
+except: 
+    print('❌ anthropic')
+try:
+    import PIL
+    print('✅ PIL/pillow')
+except:
+    print('❌ PIL/pillow')
+try:
+    import piexif
+    print('✅ piexif')
+except:
+    print('❌ piexif')
+try:
+    import geopy
+    print('✅ geopy')
+except:
+    print('❌ geopy')
+"
       echo ""
       if [[ -n "$ANTHROPIC_API_KEY" ]]; then
         echo "✅ API key is set"
@@ -96,6 +127,7 @@ class DngCaption < Formula
     
     chmod 0755, bin/"caption"
     chmod 0755, bin/"caption-batch"
+    chmod 0755, bin/"caption-embed"
     chmod 0755, bin/"caption-test"
   end
 
@@ -114,14 +146,16 @@ class DngCaption < Formula
       📝 Set your API key:
          export ANTHROPIC_API_KEY="sk-ant-your-key-here"
 
-      📸 Usage:
-         caption photo.jpg
-         caption-batch ~/Photos/
+      📸 Available commands:
+         caption photo.jpg           # Generate captions
+         caption-batch ~/Photos/      # Batch process folder
+         caption-embed ~/Photos/      # Embed XMP into JPEGs
+         caption-test                 # Test installation
 
-      If caption command fails, check:
-      1. Run caption-test to see what's installed
-      2. Check #{libexec} for Python files
-      3. Ensure API key is set correctly
+      If commands fail, check:
+      1. Run caption-test to diagnose
+      2. Ensure API key is set correctly
+      3. Check file permissions
     EOS
   end
 end
