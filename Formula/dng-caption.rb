@@ -69,7 +69,7 @@ class DngCaption < Formula
       #!/bin/bash
       export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
       export PYTHONPATH="#{libexec}:$PYTHONPATH"
-      
+
       # Embed XMP into JPEGs
       if [[ -f "#{libexec}/embed.py" ]]; then
         exec "#{libexec}/bin/python" "#{libexec}/embed.py" "$@"
@@ -78,7 +78,50 @@ class DngCaption < Formula
         exit 1
       fi
     EOS
-    
+
+    (bin/"caption-auto").write <<~EOS
+      #!/bin/bash
+      export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
+      export PYTHONPATH="#{libexec}:$PYTHONPATH"
+
+      # Unified command: batch caption + auto embed
+      echo "🎯 Step 1/2: Generating captions..."
+      if [[ -f "#{libexec}/batch.py" ]]; then
+        "#{libexec}/bin/python" "#{libexec}/batch.py" "$@"
+        BATCH_EXIT=$?
+
+        if [[ $BATCH_EXIT -ne 0 ]]; then
+          echo "❌ Error during batch captioning (exit code: $BATCH_EXIT)"
+          exit $BATCH_EXIT
+        fi
+
+        echo ""
+        echo "✅ Captions generated successfully!"
+        echo ""
+        echo "🎯 Step 2/2: Embedding captions into JPEGs..."
+
+        if [[ -f "#{libexec}/embed.py" ]]; then
+          "#{libexec}/bin/python" "#{libexec}/embed.py" "$@"
+          EMBED_EXIT=$?
+
+          if [[ $EMBED_EXIT -ne 0 ]]; then
+            echo "❌ Error during embedding (exit code: $EMBED_EXIT)"
+            exit $EMBED_EXIT
+          fi
+
+          echo ""
+          echo "✅ All done! Captions generated and embedded."
+        else
+          echo "⚠️  Warning: embed.py not found, skipping embedding step"
+          exit 1
+        fi
+      else
+        echo "Error: batch.py not found at #{libexec}/"
+        ls -la "#{libexec}/"
+        exit 1
+      fi
+    EOS
+
     # Test script to verify installation
     (bin/"caption-test").write <<~EOS
       #!/bin/bash
@@ -128,6 +171,7 @@ except:
     chmod 0755, bin/"caption"
     chmod 0755, bin/"caption-batch"
     chmod 0755, bin/"caption-embed"
+    chmod 0755, bin/"caption-auto"
     chmod 0755, bin/"caption-test"
   end
 
@@ -147,10 +191,15 @@ except:
          export ANTHROPIC_API_KEY="sk-ant-your-key-here"
 
       📸 Available commands:
-         caption photo.jpg           # Generate captions
-         caption-batch ~/Photos/      # Batch process folder
-         caption-embed ~/Photos/      # Embed XMP into JPEGs
+         caption-auto ~/Photos/       # 🌟 NEW: Batch caption + auto embed (recommended!)
+         caption-batch ~/Photos/      # Generate captions only
+         caption-embed ~/Photos/      # Embed XMP into JPEGs only
          caption-test                 # Test installation
+
+      💡 The caption-auto command is your all-in-one solution:
+         - Generates captions for all images in a folder
+         - Automatically embeds captions from XMP into JPG files
+         - Shows progress for each step
 
       If commands fail, check:
       1. Run caption-test to diagnose
