@@ -1,7 +1,7 @@
 class DngCaption < Formula
   desc "AI-powered photo caption generator with GPS location support"
-  homepage "https://github.com/adreddy/dng-caption-tool"
-  url "https://github.com/adreddy/dng-caption-tool/archive/refs/tags/v2.1.0.tar.gz"
+  homepage "https://github.com/adreddy1985/dng-caption-tool"
+  url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.1.0.tar.gz"
   sha256 "PLACEHOLDER_SHA256"  # Update with actual SHA256
   license "MIT"
   version "2.1.0"
