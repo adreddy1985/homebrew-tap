@@ -25,101 +25,55 @@ class DngCaption < Formula
     system libexec/"bin/pip", "install", "geopy"
     system libexec/"bin/pip", "install", "exifread"
     
-    # Copy all Python files to libexec
-    libexec.install Dir["*.py"]
-    
-    # If there's a src directory, copy that too
-    if Dir.exist?("src")
-      (libexec/"src").mkpath
-      (libexec/"src").install Dir["src/*.py"]
-    end
-    
-    # If there's a dng_caption directory, copy that
-    if Dir.exist?("dng_caption")
+    # Install the dng_caption package from the nested structure
+    # The source has: dng-caption-tool/src/dng_caption/*.py
+    if Dir.exist?("dng-caption-tool/src/dng_caption")
       (libexec/"dng_caption").mkpath
-      (libexec/"dng_caption").install Dir["dng_caption/*.py"]
+      (libexec/"dng_caption").install Dir["dng-caption-tool/src/dng_caption/*.py"]
+
+      # The package's __init__.py imports from .embed, but embed.py is at root level
+      # Copy the root embed.py and batch.py to the package directory
+      # (batch.py has relative imports so it needs to be in the package)
+      (libexec/"dng_caption").install "embed.py"
+      (libexec/"dng_caption").install "batch.py"
     end
-    
-    # Create the main wrapper script - UPDATED FOR YOUR FILE NAMES
+
+    # Create simple launcher script for batch.py
+    (libexec/"run_batch.py").write <<~PYTHON
+      #!/usr/bin/env python
+      """Launcher for batch.py that handles imports correctly"""
+      import sys
+      from dng_caption.batch import main
+
+      if __name__ == "__main__":
+          sys.exit(main())
+    PYTHON
+
+    # Create wrapper scripts
+    # Note: batch.py handles BOTH caption generation AND embedding by default
+    # Use --no-embed flag to generate captions without embedding
+
     (bin/"caption").write <<~EOS
       #!/bin/bash
       export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
       export PYTHONPATH="#{libexec}:$PYTHONPATH"
-      
-      # Your main batch processing script
-      if [[ -f "#{libexec}/batch.py" ]]; then
-        exec "#{libexec}/bin/python" "#{libexec}/batch.py" "$@"
-      else
-        echo "Error: batch.py not found at #{libexec}/"
-        ls -la "#{libexec}/"
-        exit 1
-      fi
+      exec "#{libexec}/bin/python" "#{libexec}/run_batch.py" "$@"
     EOS
-    
+
     (bin/"caption-batch").write <<~EOS
       #!/bin/bash
       export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
       export PYTHONPATH="#{libexec}:$PYTHONPATH"
-      
-      # Same as caption for batch processing
-      exec "#{libexec}/bin/python" "#{libexec}/batch.py" "$@"
-    EOS
-    
-    (bin/"caption-embed").write <<~EOS
-      #!/bin/bash
-      export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
-      export PYTHONPATH="#{libexec}:$PYTHONPATH"
-
-      # Embed XMP into JPEGs
-      if [[ -f "#{libexec}/embed.py" ]]; then
-        exec "#{libexec}/bin/python" "#{libexec}/embed.py" "$@"
-      else
-        echo "Error: embed.py not found"
-        exit 1
-      fi
+      # Generate captions only (no embedding)
+      exec "#{libexec}/bin/python" "#{libexec}/run_batch.py" --no-embed "$@"
     EOS
 
     (bin/"caption-auto").write <<~EOS
       #!/bin/bash
       export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
       export PYTHONPATH="#{libexec}:$PYTHONPATH"
-
-      # Unified command: batch caption + auto embed
-      echo "🎯 Step 1/2: Generating captions..."
-      if [[ -f "#{libexec}/batch.py" ]]; then
-        "#{libexec}/bin/python" "#{libexec}/batch.py" "$@"
-        BATCH_EXIT=$?
-
-        if [[ $BATCH_EXIT -ne 0 ]]; then
-          echo "❌ Error during batch captioning (exit code: $BATCH_EXIT)"
-          exit $BATCH_EXIT
-        fi
-
-        echo ""
-        echo "✅ Captions generated successfully!"
-        echo ""
-        echo "🎯 Step 2/2: Embedding captions into JPEGs..."
-
-        if [[ -f "#{libexec}/embed.py" ]]; then
-          "#{libexec}/bin/python" "#{libexec}/embed.py" "$@"
-          EMBED_EXIT=$?
-
-          if [[ $EMBED_EXIT -ne 0 ]]; then
-            echo "❌ Error during embedding (exit code: $EMBED_EXIT)"
-            exit $EMBED_EXIT
-          fi
-
-          echo ""
-          echo "✅ All done! Captions generated and embedded."
-        else
-          echo "⚠️  Warning: embed.py not found, skipping embedding step"
-          exit 1
-        fi
-      else
-        echo "Error: batch.py not found at #{libexec}/"
-        ls -la "#{libexec}/"
-        exit 1
-      fi
+      # batch.py already does both caption generation AND embedding by default!
+      exec "#{libexec}/bin/python" "#{libexec}/run_batch.py" "$@"
     EOS
 
     # Test script to verify installation
@@ -170,7 +124,6 @@ except:
     
     chmod 0755, bin/"caption"
     chmod 0755, bin/"caption-batch"
-    chmod 0755, bin/"caption-embed"
     chmod 0755, bin/"caption-auto"
     chmod 0755, bin/"caption-test"
   end
@@ -191,15 +144,15 @@ except:
          export ANTHROPIC_API_KEY="sk-ant-your-key-here"
 
       📸 Available commands:
-         caption-auto ~/Photos/       # 🌟 NEW: Batch caption + auto embed (recommended!)
-         caption-batch ~/Photos/      # Generate captions only
-         caption-embed ~/Photos/      # Embed XMP into JPEGs only
+         caption-auto ~/Photos/       # 🌟 Batch caption + auto embed (recommended!)
+         caption-batch ~/Photos/      # Generate captions only (no embedding)
+         caption ~/Photos/            # Same as caption-auto
          caption-test                 # Test installation
 
       💡 The caption-auto command is your all-in-one solution:
          - Generates captions for all images in a folder
-         - Automatically embeds captions from XMP into JPG files
-         - Shows progress for each step
+         - Automatically embeds captions into JPEG files
+         - Shows progress for each image
 
       If commands fail, check:
       1. Run caption-test to diagnose
