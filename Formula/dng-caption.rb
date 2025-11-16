@@ -1,8 +1,8 @@
 class DngCaption < Formula
   desc "AI-powered photo caption generator with GPS location support"
   homepage "https://github.com/adreddy1985/dng-caption-tool"
-  url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.2.0.tar.gz"
-  sha256 "cc0514bacaedba27c30f362a346c7f17ad536bb0a78985c44319a36d57fffa23"
+  url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.3.0.tar.gz"
+  sha256 "7697b1239a6b2efca9c7c2f073a00c04dce050356107b61e57efcaa03e874b85"
   license "MIT"
 
   depends_on "python@3.11"
