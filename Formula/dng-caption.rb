@@ -1,163 +1,71 @@
 class DngCaption < Formula
-  desc "AI-powered photo caption generator with GPS location support"
+  include Language::Python::Virtualenv
+
+  desc "AI-powered photo caption generator with Claude and OpenAI support"
   homepage "https://github.com/adreddy1985/dng-caption-tool"
   url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.3.0.tar.gz"
-  sha256 "7697b1239a6b2efca9c7c2f073a00c04dce050356107b61e57efcaa03e874b85"
+  sha256 "0e2044b1d5400223b49405cabaf0b15e2ace2e16129606a6bbd1cec51ec130ad"
   license "MIT"
+  head "https://github.com/adreddy1985/dng-caption-tool.git", branch: "main"
 
   depends_on "python@3.11"
   depends_on "exiftool"
 
+  resource "anthropic" do
+    url "https://files.pythonhosted.org/packages/anthropic-0.18.0.tar.gz"
+    sha256 "PLACEHOLDER"
+  end
+
+  resource "openai" do
+    url "https://files.pythonhosted.org/packages/openai-1.0.0.tar.gz"
+    sha256 "PLACEHOLDER"
+  end
+
+  resource "pillow" do
+    url "https://files.pythonhosted.org/packages/Pillow-10.0.0.tar.gz"
+    sha256 "PLACEHOLDER"
+  end
+
+  resource "piexif" do
+    url "https://files.pythonhosted.org/packages/piexif-1.1.3.tar.gz"
+    sha256 "PLACEHOLDER"
+  end
+
+  resource "geopy" do
+    url "https://files.pythonhosted.org/packages/geopy-2.3.0.tar.gz"
+    sha256 "PLACEHOLDER"
+  end
+
+  resource "exifread" do
+    url "https://files.pythonhosted.org/packages/exifread-3.0.0.tar.gz"
+    sha256 "PLACEHOLDER"
+  end
+
   def install
-    # Use Homebrew's Python
-    python = Formula["python@3.11"].opt_bin/"python3.11"
-    
-    # Create a virtual environment manually
-    system python, "-m", "venv", libexec
-    
-    # Upgrade pip
-    system libexec/"bin/pip", "install", "--upgrade", "pip"
-    
-    # Install Python dependencies
-    system libexec/"bin/pip", "install", "anthropic"
-    system libexec/"bin/pip", "install", "pillow"
-    system libexec/"bin/pip", "install", "piexif"
-    system libexec/"bin/pip", "install", "geopy"
-    system libexec/"bin/pip", "install", "exifread"
-    
-    # Install the dng_caption package from the nested structure
-    # The source has: dng-caption-tool/src/dng_caption/*.py
-    if Dir.exist?("dng-caption-tool/src/dng_caption")
-      (libexec/"dng_caption").mkpath
-      (libexec/"dng_caption").install Dir["dng-caption-tool/src/dng_caption/*.py"]
-
-      # The package's __init__.py imports from .embed, but embed.py is at root level
-      # Copy the root embed.py and batch.py to the package directory
-      # (batch.py has relative imports so it needs to be in the package)
-      (libexec/"dng_caption").install "embed.py"
-      (libexec/"dng_caption").install "batch.py"
-    end
-
-    # Create simple launcher script for batch.py
-    (libexec/"run_batch.py").write <<~PYTHON
-      #!/usr/bin/env python
-      """Launcher for batch.py that handles imports correctly"""
-      import sys
-      from dng_caption.batch import main
-
-      if __name__ == "__main__":
-          sys.exit(main())
-    PYTHON
-
-    # Create wrapper scripts
-    # Note: batch.py handles BOTH caption generation AND embedding by default
-    # Use --no-embed flag to generate captions without embedding
-
-    (bin/"caption").write <<~EOS
-      #!/bin/bash
-      export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
-      export PYTHONPATH="#{libexec}:$PYTHONPATH"
-      exec "#{libexec}/bin/python" "#{libexec}/run_batch.py" "$@"
-    EOS
-
-    (bin/"caption-batch").write <<~EOS
-      #!/bin/bash
-      export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
-      export PYTHONPATH="#{libexec}:$PYTHONPATH"
-      # Generate captions only (no embedding)
-      exec "#{libexec}/bin/python" "#{libexec}/run_batch.py" --no-embed "$@"
-    EOS
-
-    (bin/"caption-auto").write <<~EOS
-      #!/bin/bash
-      export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}"
-      export PYTHONPATH="#{libexec}:$PYTHONPATH"
-      # batch.py already does both caption generation AND embedding by default!
-      exec "#{libexec}/bin/python" "#{libexec}/run_batch.py" "$@"
-    EOS
-
-    # Test script to verify installation
-    (bin/"caption-test").write <<~EOS
-      #!/bin/bash
-      echo "🧪 DNG Caption Installation Test"
-      echo "================================"
-      echo ""
-      echo "Python location: #{libexec}/bin/python"
-      echo ""
-      echo "Installed packages:"
-      "#{libexec}/bin/pip" list | grep -E "anthropic|pillow|piexif|geopy|exifread" || echo "No packages found"
-      echo ""
-      echo "Python files found:"
-      ls -la "#{libexec}/"*.py 2>/dev/null || echo "No .py files in root"
-      echo ""
-      echo "Testing Python imports:"
-      "#{libexec}/bin/python" -c "
-try:
-    import anthropic
-    print('✅ anthropic')
-except: 
-    print('❌ anthropic')
-try:
-    import PIL
-    print('✅ PIL/pillow')
-except:
-    print('❌ PIL/pillow')
-try:
-    import piexif
-    print('✅ piexif')
-except:
-    print('❌ piexif')
-try:
-    import geopy
-    print('✅ geopy')
-except:
-    print('❌ geopy')
-"
-      echo ""
-      if [[ -n "$ANTHROPIC_API_KEY" ]]; then
-        echo "✅ API key is set"
-      else
-        echo "⚠️  API key not set. Run:"
-        echo "    export ANTHROPIC_API_KEY='sk-ant-...'"
-      fi
-    EOS
-    
-    chmod 0755, bin/"caption"
-    chmod 0755, bin/"caption-batch"
-    chmod 0755, bin/"caption-auto"
-    chmod 0755, bin/"caption-test"
+    virtualenv_install_with_resources
   end
 
   test do
-    assert_predicate bin/"caption", :exist?
-    assert_predicate bin/"caption-test", :exist?
+    system "#{bin}/dng-caption", "--help"
   end
 
   def caveats
     <<~EOS
-      ✅ DNG Caption Tool installed!
+      To use this tool, set your API key for your chosen provider:
 
-      🧪 First, test your installation:
-         caption-test
+      For Claude (default):
+        export ANTHROPIC_API_KEY="sk-ant-..."
+        Get your key at: https://console.anthropic.com
 
-      📝 Set your API key:
-         export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+      For OpenAI:
+        export OPENAI_API_KEY="sk-..."
+        Get your key at: https://platform.openai.com/api-keys
 
-      📸 Available commands:
-         caption-auto ~/Photos/       # 🌟 Batch caption + auto embed (recommended!)
-         caption-batch ~/Photos/      # Generate captions only (no embedding)
-         caption ~/Photos/            # Same as caption-auto
-         caption-test                 # Test installation
+      Add to your ~/.zshrc to make it permanent.
 
-      💡 The caption-auto command is your all-in-one solution:
-         - Generates captions for all images in a folder
-         - Automatically embeds captions into JPEG files
-         - Shows progress for each image
-
-      If commands fail, check:
-      1. Run caption-test to diagnose
-      2. Ensure API key is set correctly
-      3. Check file permissions
+      Usage:
+        dng-caption photo.jpg --provider claude
+        dng-caption photo.jpg --provider openai --model gpt-4o
     EOS
   end
 end
