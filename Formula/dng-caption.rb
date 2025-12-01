@@ -11,11 +11,11 @@ class DngCaption < Formula
   depends_on "exiftool"
   depends_on "python@3.11"
 
+  # Fix setup.py to find README.md in the nested subdirectory
+  patch :DATA
+
   def install
-    # The release tarball has a nested dng-caption-tool subdirectory
-    cd "dng-caption-tool" do
-      virtualenv_install_with_resources
-    end
+    virtualenv_install_with_resources
   end
 
   test do
@@ -42,3 +42,16 @@ class DngCaption < Formula
     EOS
   end
 end
+
+__END__
+--- a/setup.py
++++ b/setup.py
+@@ -9,7 +9,7 @@ from pathlib import Path
+
+ # Read the README file
+ this_directory = Path(__file__).parent
+-long_description = (this_directory / "README.md").read_text()
++long_description = (this_directory / "dng-caption-tool" / "README.md").read_text()
+
+ setup(
+     name="dng-caption",
