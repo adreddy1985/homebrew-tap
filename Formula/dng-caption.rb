@@ -13,16 +13,13 @@ class DngCaption < Formula
 
   def install
     # The release tarball has a nested directory structure
-    # Remove the broken root setup.py and use files from the subdirectory
-    (buildpath/"setup.py").unlink if (buildpath/"setup.py").exist?
-
-    # Copy everything from the subdirectory to the root
-    (buildpath/"dng-caption-tool").glob("*").each do |item|
-      next if item.basename.to_s == "." || item.basename.to_s == ".."
-      cp_r item, buildpath, remove_destination: true
+    # Work directly from the subdirectory
+    cd "dng-caption-tool" do
+      virtualenv_create(libexec, "python3.11")
+      system libexec/"bin/pip", "install", "-v", "--no-binary", ":all:",
+             "--ignore-installed", "."
+      bin.install_symlink Dir["#{libexec}/bin/dng-caption*"]
     end
-
-    virtualenv_install_with_resources
   end
 
   test do
