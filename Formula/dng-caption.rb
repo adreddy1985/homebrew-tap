@@ -15,8 +15,12 @@ class DngCaption < Formula
     # The release tarball has a nested directory structure
     # The actual project files are in the dng-caption-tool subdirectory
     virtualenv_create(libexec, "python3.11")
+
+    # Install the package with dependencies
     system libexec/"bin/pip", "install", "-v", "--ignore-installed",
-           buildpath/"dng-caption-tool"
+           buildpath/"dng-caption-tool" or
+      odie "pip install failed - check that pyproject.toml exists and is valid"
+
     bin.install_symlink Dir["#{libexec}/bin/dng-caption*"]
   end
 
