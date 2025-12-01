@@ -16,8 +16,7 @@ class DngCaption < Formula
     # Work directly from the subdirectory
     cd "dng-caption-tool" do
       virtualenv_create(libexec, "python3.11")
-      system libexec/"bin/pip", "install", "-v", "--no-binary", ":all:",
-             "--ignore-installed", "."
+      system libexec/"bin/pip", "install", "-v", "--ignore-installed", "."
       bin.install_symlink Dir["#{libexec}/bin/dng-caption*"]
     end
   end
