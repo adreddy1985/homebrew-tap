@@ -12,7 +12,10 @@ class DngCaption < Formula
   depends_on "python@3.11"
 
   def install
-    virtualenv_install_with_resources
+    # The release tarball has a nested dng-caption-tool subdirectory
+    cd "dng-caption-tool" do
+      virtualenv_install_with_resources
+    end
   end
 
   test do
