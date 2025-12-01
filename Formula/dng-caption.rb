@@ -3,8 +3,8 @@ class DngCaption < Formula
 
   desc "AI-powered photo caption generator with Claude and OpenAI support"
   homepage "https://github.com/adreddy1985/dng-caption-tool"
-  url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.3.0.tar.gz"
-  sha256 "0e2044b1d5400223b49405cabaf0b15e2ace2e16129606a6bbd1cec51ec130ad"
+  url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.3.1.tar.gz"
+  sha256 "e83a7ed501207ffb17856fdeaa3f5f9ed187076b5cb1609e7a4f79c4ed4a98f6"
   license "MIT"
   head "https://github.com/adreddy1985/dng-caption-tool.git", branch: "main"
 
@@ -12,16 +12,7 @@ class DngCaption < Formula
   depends_on "python@3.11"
 
   def install
-    # The release tarball has a nested directory structure
-    # The actual project files are in the dng-caption-tool subdirectory
-    virtualenv_create(libexec, "python3.11")
-
-    # Install the package with dependencies
-    system libexec/"bin/pip", "install", "-v", "--ignore-installed",
-           buildpath/"dng-caption-tool" or
-      odie "pip install failed - check that pyproject.toml exists and is valid"
-
-    bin.install_symlink Dir["#{libexec}/bin/dng-caption*"]
+    virtualenv_install_with_resources
   end
 
   test do
