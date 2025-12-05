@@ -9,6 +9,7 @@ class DngCaption < Formula
   head "https://github.com/adreddy1985/dng-caption-tool.git", branch: "main"
 
   depends_on "python@3.11"
+  depends_on "rust" => :build
   depends_on "exiftool"
 
   resource "annotated-types" do
