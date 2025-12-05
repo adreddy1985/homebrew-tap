@@ -3,8 +3,8 @@ class DngCaption < Formula
 
   desc "AI-powered photo caption generator with Claude and OpenAI support"
   homepage "https://github.com/adreddy1985/dng-caption-tool"
-  url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.3.1.tar.gz"
-  sha256 "e83a7ed501207ffb17856fdeaa3f5f9ed187076b5cb1609e7a4f79c4ed4a98f6"
+  url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v2.4.0.tar.gz"
+  sha256 "e1c7086b2115cda46a344c9628a3b33bb801f94cfeb79365b0f762c5e9a403b9"
   license "MIT"
   head "https://github.com/adreddy1985/dng-caption-tool.git", branch: "main"
 
