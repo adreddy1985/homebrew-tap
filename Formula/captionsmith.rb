@@ -4,7 +4,7 @@ class Captionsmith < Formula
   desc "AI-powered photo caption generator for stock photography"
   homepage "https://github.com/adreddy1985/dng-caption-tool"
   url "https://github.com/adreddy1985/dng-caption-tool/archive/refs/tags/v3.0.0.tar.gz"
-  sha256 "PLACEHOLDER"  # Update after creating release
+  sha256 "e94052f9142b6579040adf6425a51312de6233336f98bdf91b74ea53644343c5"
   license "AGPL-3.0"
   head "https://github.com/adreddy1985/dng-caption-tool.git", branch: "main"
 
@@ -23,7 +23,7 @@ class Captionsmith < Formula
 
   resource "google-genai" do
     url "https://files.pythonhosted.org/packages/source/g/google-genai/google_genai-1.0.0.tar.gz"
-    sha256 "PLACEHOLDER"
+    sha256 "15712abb808f891a14eafc9edf21b8cf92ea952f627dd0e2e939657efd234acd"
   end
 
   resource "pillow" do
