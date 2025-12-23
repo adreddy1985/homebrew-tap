@@ -46,6 +46,16 @@ captionsmith-batch ~/Photos/ --style travel
 captionsmith photo.jpg --embed
 ```
 
+## Alternative Installation
+
+You can also install via pip:
+
+```bash
+pip install captionsmith
+```
+
+See the [main repository](https://github.com/adreddy1985/dng-caption-tool) for details.
+
 ## More Information
 
 - [Full Documentation](https://github.com/adreddy1985/dng-caption-tool)
